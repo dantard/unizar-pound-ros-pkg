@@ -19,11 +19,8 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x -O3")
 add_executable (ros-pound
     ros-pound.cpp
 )
-add_executable (ros-pound-repeater
-    ros-pound-repeater.cpp
-)
+
 target_link_libraries(ros-pound wrapper  z pthread rt pthread ${Boost_LIBRARIES}  ${catkin_LIBRARIES} )
-target_link_libraries(ros-pound-repeater z pthread rt pthread ${Boost_LIBRARIES}  ${catkin_LIBRARIES} )
 
 add_custom_command(TARGET ros-pound
         POST_BUILD
