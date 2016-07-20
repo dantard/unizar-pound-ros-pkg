@@ -37,6 +37,33 @@ The data type used must be specified in the `config/data_types.h` file. For exam
 
 `#include <std_msgs/Float64.h>`
 
+
+The complete list of options for the YAML file is:
+
+```     
+use_ip: true
+device: wlan0
+base_ip: 192.168.1.1
+nodes:
+ - id: 3
+   mac: 22:44:55:FF:00:01
+ - id: 2
+   mac: 18:19:20:21:22:23
+routes:
+ - dest: 3
+   next: 5
+ - dest: 4
+   next: 5
+feedback: false
+auto_tuning: false
+port: 32000
+queue: 50
+delay: 2500
+rate_mbps: 6.0
+use_discard: false
+quiet: false
+```
+
 For additional information check http://wiki.ros.org/ros-rt-wmp and/or contact dantard@unizar.es
 
 
