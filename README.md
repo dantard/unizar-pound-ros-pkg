@@ -33,7 +33,11 @@ where
 * `period` the expected period of the topic in ms, for example `100` 
 * `time_to_live` period during the which the message is considered valid in ms, for example `500` 
 
-For additional informations contact `dantard@unizar.es`
+The data type used must be specified in the `config/data_types.h` file. For example:
+
+`#include <std_msgs/Float64.h>`
+
+For additional information check http://wiki.ros.org/ros-rt-wmp and/or contact dantard@unizar.es
 
 
 
