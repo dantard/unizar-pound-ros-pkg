@@ -1,0 +1,6 @@
+string command
+string param1
+int32  param2
+---
+string info
+int32 result
