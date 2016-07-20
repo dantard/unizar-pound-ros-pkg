@@ -25,13 +25,19 @@ The topics to be transported must be specified in the `config/config.h` file wit
 
 where
 
-`type` specifies the data type for example `std_msgs::Float64`
-`topic_name` specified the name of the topic, for example `"float_number"`
-`source` is the source node of the topic, for example `0`
-`dest` specifies the destination node(s) as text for example `"0,1,2"` however for the moment Pound only support unicast (only one node should be specified)
-`priority` specifies the priority associated to the topic for example `56`. Must be between 0 and 127
-`period` the expected period of the topic in ms, for example `100`
-`time_to_live` period during the which the message is considered valid in ms, for example `500`
+`type` specifies the data type for example `std_msgs::Float64` 
+
+`topic_name` specifies the name of the topic, for example `"float_number"` 
+
+`source` is the source node of the topic, for example `0` 
+
+`dest` specifies the destination node(s) as text for example `"0,1,2"` however for the moment Pound only support unicast (only one node should be specified) 
+
+`priority` specifies the priority associated to the topic for example `56`. Must be between 0 and 127 
+
+`period` the expected period of the topic in ms, for example `100` 
+
+`time_to_live` period during the which the message is considered valid in ms, for example `500` 
 
 For additional informations contact `dantard@unizar.es`
 
