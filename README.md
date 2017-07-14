@@ -1,5 +1,5 @@
 # unizar-pound-ros-pkg
-The Pound ROS node
+The Pound ROS node enables topic prioritization and supports multiple ROS core in addition to the options of compression and configurations.
 
 Usage:
 `rosrun ros_pound ros-pound --node-id 0 --num-of-nodes 3`
