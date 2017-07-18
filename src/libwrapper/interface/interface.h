@@ -56,3 +56,4 @@ bool wrapper_call_service(std::string command, std::string param1, int param2, s
 
 std::string wrapper_get_config_filename();
 void wrapper_setup_config(YAML::Node, int _node_id, int _num_of_nodes, int _num_of_ports);
+int wrapper_main(int argc, char * argv[]);

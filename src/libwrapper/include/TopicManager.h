@@ -77,7 +77,8 @@ public:
 
     virtual std::string get_in_topic(){
         std::ostringstream s;
-        s << n.getNamespace() << "/tx/" << topic;
+        //s << n.getNamespace() << "/tx/" << topic;
+        s << topic;
         return s.str();
     }
 
@@ -91,6 +92,12 @@ public:
         started = true;
     }
 
+    void reconnect(){
+        started = true;
+        sub.shutdown();
+        sub = n.subscribe(get_in_topic(), 50, &TopicManager::callback, this);
+
+    }
 
     void stop(){
         started = false;
@@ -98,10 +105,9 @@ public:
 
     virtual void run() {
         wrapper_flow_add(port, period, priority, deadline);
-
         if (im_source) {
-            sub = n.subscribe(get_in_topic(), 1000, &TopicManager::callback, this,ros::TransportHints().tcpNoDelay() );
-            //sub = n.subscribe(get_in_topic(), 1, &TopicManager::callback, this);//,ros::TransportHints().tcpNoDelay() );
+            //sub = n.subscribe(get_in_topic(), 1000, &TopicManager::callback, this,ros::TransportHints().tcpNoDelay() );
+            sub = n.subscribe(get_in_topic(), 50, &TopicManager::callback, this);//,ros::TransportHints().tcpNoDelay() );
        }
         if (im_dest){
             pub = n.advertise<T> (get_out_topic(),1000);
@@ -146,7 +152,7 @@ public:
         int real_period = rate*period;
         double error = fabs(1.0-(double(real_period)/double(this->period)));
         if (error > 0.05){
-            ROS_WARN_ONCE("Topic '%s' real period is %dms", topic.c_str(), real_period);
+          //  ROS_WARN_ONCE("Topic '%s' real period is %dms", topic.c_str(), real_period);
         }
         if (++count > rate-1){
             count = 0;
@@ -172,8 +178,6 @@ public:
 
             int priority = getPriority(message);
             unsigned int dest = getDest(message);
-
-         //   fprintf(stdout, "1111 %f\n", ros::Time::now().toSec());
 
             bz_push(buffer, serial_size + sizeof(WrapperHeader), priority, port, wrapper_get_node_id(), dest, deadline);
             delete buffer;

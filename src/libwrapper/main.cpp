@@ -68,7 +68,7 @@ bool callback(typename libwrapper::Manage::Request &req, typename libwrapper::Ma
         return wrapper_call_service(req.command, req.param1, req.param2, resp.info, resp.result);
     }else if(req.command.compare("LIST") == 0){
         resp.info.clear();
-        resp.info.append("LIST, GET_NODE_ID, ECHO, START, STOP, SET_PERIOD, SET_PRIORITY, GET_PRIORITY, GET_PERIOD");
+        resp.info.append("LIST, GET_NODE_ID, ECHO, START, STOP, RECONNECT, SET_PERIOD, SET_PRIORITY, GET_PRIORITY, GET_PERIOD");
         resp.result = 0;
         return true;
     }else if(req.command.compare("GET_NODE_ID") == 0){
@@ -141,6 +141,9 @@ bool callback(typename libwrapper::Manage::Request &req, typename libwrapper::Ma
     }else if(req.command.compare("GET_TOTAL_BYTES") == 0){
 
         resp.result = it->second->get_total_bytes();
+        return true;
+    }else if(req.command.compare("RECONNECT") == 0){
+        it->second->reconnect();
         return true;
     }
 
@@ -259,13 +262,12 @@ int main(int argc, char * argv[]){
     #include "config/config.h"
 
     wrapper_init(n, node_id, num_of_nodes, port);
-    wrapper_run_bg();
 
-    printf("\n%-16s PORTS  PRIORITY  PERIOD   CMP   DEST\n", "TOPICS");
-    printf("-----------------------------------------------------\n");
+    printf("\n%-40s PORTS  PRIORITY  PERIOD   CMP   DEST\n", "TOPICS");
+    printf("-----------------------------------------------------------------------------\n");
     for (it = map.begin(); it != map.end(); it++){
         if (it->second->get_type()==Manager::TOPIC){
-            printf("%-16s %5d       %3d   %5d   %3s  ", it->first.c_str(), it->second->get_port(), it->second->get_priority(), it->second->get_period(),it->second->get_compression()?"yes":"no");
+            printf("%-40s %5d       %3d   %5d   %3s  ", it->first.c_str(), it->second->get_port(), it->second->get_priority(), it->second->get_period(),it->second->get_compression()?"yes":"no");
 
             for (int i = 0; i< it->second->get_destinations().size(); i++){
                 printf("%s", i != 0 ? ", " : " ");
@@ -277,18 +279,22 @@ int main(int argc, char * argv[]){
 
     }
 
-    printf("\n%-16s PORTS  PRIORITY  PERIOD   CMP\n", "SERVICES");
+    printf("\n%-40s PORTS  PRIORITY  PERIOD   CMP\n", "SERVICES");
     printf("----------------------------------------------\n");
     for (it = map.begin(); it != map.end(); it++){
         if (it->second->get_type()==Manager::SERVICE){
-            printf("%-16s %2d,%2d       %3d   %5s   %3s\n", it->first.c_str(), it->second->get_port(), it->second->get_port()+1, it->second->get_priority(), "n/a",it->second->get_compression()?"yes":"no");
+            printf("%-40s %2d,%2d       %3d   %5s   %3s\n", it->first.c_str(), it->second->get_port(), it->second->get_port()+1, it->second->get_priority(), "n/a",it->second->get_compression()?"yes":"no");
         }
     }
+    printf("\n");
+    wrapper_run_bg();
 
 
     for (it = map.begin(); it != map.end(); it++){
         map[it->first]->run();
     }
+
+
 
 ///XXXXXXXXXXXXXXXXXXXXXXXX
     ros::AsyncSpinner spinner(4); // Use 4 threads

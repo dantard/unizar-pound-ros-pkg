@@ -88,7 +88,7 @@ public:
 
     virtual void run() {
         wrapper_flow_add(port, period, priority, deadline);
-        sub = n.subscribe(get_in_topic(), 1000, &ShapeShifterSender::callback, this);
+        sub = n.subscribe(get_in_topic(), 1000, &ShapeShifterSender::callback, this);        
     }
 
     std::vector<unsigned int> ticks;

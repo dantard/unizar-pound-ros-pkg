@@ -69,7 +69,7 @@ public:
         return byte_total;
     }
 
-
+    virtual void reconnect(){}
     virtual void start(){}
     virtual void stop(){}
     virtual void run(){}

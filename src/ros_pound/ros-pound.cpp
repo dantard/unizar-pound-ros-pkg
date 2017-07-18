@@ -62,6 +62,9 @@
 #define MAX_HOPS 5
 #define MAX_80211_FRAME 2342
 
+int wrapper_main(int argc, char * argv[]);
+
+
 struct TXElem{
     int part;
     int size;
@@ -114,7 +117,7 @@ int use_ip = 1, use_discard = 0, delay = 2500;
 int port = 32000;
 int txsockfd, rxsockfd;
 int node_id, num_of_nodes, auto_tuning = 0, feedback = 0, quiet = 0;
-int discarded = 0, forwarded = 0, sent = 0, enqueued = 0, received = 0;
+int discarded = 0, forwarded = 0, sent = 0, enqueued = 0, received = 0, byte_sent = 0;
 
 int should_discard = 0;
 
@@ -515,6 +518,7 @@ void tx_loop(){
                     send_raw(next_hop, (char*) &txe, size);
                 }
 
+                byte_sent += size;
                 sent ++;
                 queue.erase(queue.begin() + max_priority_id);
                 pthread_mutex_unlock(&mtx_tx);
@@ -639,8 +643,33 @@ void st_loop(){
             }
         }
         if (!quiet){
-            fprintf(stderr,"Stats: RX:%6d TX:%6d FW:%6d DS:%6d || ENQ:%6d TXQ:%6d MAP:%3d DLY:%4d SD:%d Delay:%5d\r", received,
-                    sent, forwarded, discarded, enqueued,(int) queue.size(), (int) map_rx.size(), queue.size()> 0 ? get_timestamp() - queue.at(0).timestamp: 0, should_discard, delay);
+            static unsigned long long prev_ts = get_timestamp_us();
+            static int prev_byte = byte_sent;
+            static double bw = 0;
+
+            unsigned long long now_ts = get_timestamp_us();
+            int now_byte = byte_sent;
+
+            unsigned long long elapsed = now_ts - prev_ts;
+
+            if (elapsed > 1e6){
+                bw = 1000.0*double(now_byte - prev_byte)*8.0/double(elapsed);
+                prev_ts = now_ts;
+                prev_byte = now_byte;
+            }
+
+            fprintf(stderr,"Stats: Kbps:%8.2f RX:%6d TX:%6d FW:%6d DS:%6d || ENQ:%6d TXQ:%6d MAP:%3d DLY:%4d SD:%d Delay:%5d\r",
+                    bw,
+                    received,
+                    sent,
+                    forwarded,
+                    discarded,
+                    enqueued,
+                    (int) queue.size(),
+                    (int) map_rx.size(),
+                    queue.size()> 0 ? get_timestamp() - queue.at(0).timestamp: 0,
+                    should_discard,
+                    delay);
         }
         usleep(250000);
     }
@@ -757,3 +786,7 @@ int wrapper_set_priority(int port, int priority){
 }
 bool wrapper_call_service(std::string command, std::string param1, int param2, std::string & info, int &result){
 }
+
+//int main(int argc, char * argv[]){
+//    return wrapper_main(argc, argv);
+//}
