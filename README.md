@@ -1,5 +1,5 @@
 # unizar-pound-ros-pkg
-The Pound ROS node enables topic prioritization and supports multiple ROS core in addition to the options of compression and configurations.
+The Pound ROS node enables topic prioritization and supports multiple ROS cores in addition to the options of compression and configurations. It is mainly designed to improve communication performance (in terms of delay and jitter) in wireless multi-hop networks.
 
 Usage:
 `rosrun ros_pound ros-pound --node-id 0 --num-of-nodes 3`
@@ -64,7 +64,8 @@ use_discard: false
 quiet: false
 ```
 
-For additional information check http://wiki.ros.org/ros-rt-wmp and/or contact dantard@unizar.es
+The Pound node is similar to RT-WMP package available at http://wiki.ros.org/ros-rt-wmp. While the RT-WMP assigns global priorities, the Pound assigns local (node or machine level) priorities.
+For more information, please contact dantard@unizar.es
 
 
 
