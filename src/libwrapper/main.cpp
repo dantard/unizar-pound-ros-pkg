@@ -201,8 +201,11 @@ void create_shapeshifter_topics(ros::NodeHandle &n, int port, YAML::Node & topic
 
 int main(int argc, char * argv[]){
 
-    char ns[32], name[32], path[32];
+    char ns[32], name[32], path[32], config_file[64];
     int ans, delay;
+    std::ostringstream oss1;
+    std::string filename = wrapper_get_config_filename();
+    oss1 << getenv("HOME") << "/" <<filename;
     argo_setCommentId(argo_addString(name, STR("node-name"), STR("")),
                       STR("Specify the name of the node"));
     argo_setCommentId(argo_addString(ns, STR("namespace"), STR("")),
@@ -217,6 +220,8 @@ int main(int argc, char * argv[]){
                       STR("Specify number of nodes"));
     argo_setCommentId(argo_addInt(&delay, STR("start-delay"), 0, 1),
                       STR("Delays the start of the node"));
+    argo_setCommentId(argo_addString(config_file, STR("config-file"), (char*) oss1.str().c_str()),
+                      STR("Specify the configuration file"));
     argo_setExample(argv[0],STR("--node-id 0 --num-of-nodes 3 --auto-namespace"));
 
     argo_doProcess(argc, argv, 0);
@@ -239,15 +244,15 @@ int main(int argc, char * argv[]){
     ros::ServiceServer service = n.advertiseService("manage", callback);
     map["ss_listener"] = new ShapeShifterListener(n, port);
 
-    std::ostringstream oss1;
-    std::string filename = wrapper_get_config_filename();
+//    std::ostringstream oss1;
+//    std::string filename = wrapper_get_config_filename();
 
-    oss1 << getenv("HOME") << "/" <<filename;
-    std::cout << "Reading config file " << oss1.str() << "..." << std::endl;
+    filename = std::string(config_file);
+    std::cerr << "Reading config file " << filename << "..." << std::endl;
     try{
 
-        YAML::Node config = YAML::LoadFile(oss1.str());
-        wrapper_setup_config(config, node_id, num_of_nodes, port);
+        YAML::Node config = YAML::LoadFile(filename);
+        wrapper_setup_config(config, node_id, num_of_nodes, port) ;
 
         if (YAML::Node topics = config["topics"]){
             create_shapeshifter_topics(n, port, topics);
@@ -256,6 +261,7 @@ int main(int argc, char * argv[]){
         std::cout << "Done." << std::endl;
     }catch(...){
         std::cout << "Bad file or file not found." << std::endl;
+        exit(-1);
     }
     port++;
 

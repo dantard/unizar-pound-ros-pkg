@@ -77,6 +77,7 @@ struct TXElem{
     unsigned char src;
     unsigned int dst;
     unsigned int parts;
+    unsigned int serial;
     char data[MESSAGE_SIZE];
 };
 
@@ -87,6 +88,7 @@ struct RXElem{
     unsigned char port;
     unsigned char src;
     unsigned int dst;
+    unsigned int timestamp;
     int uid;
     std::vector<char> data;
 };
@@ -117,9 +119,12 @@ int use_ip = 1, use_discard = 0, delay = 2500;
 int port = 32000;
 int txsockfd, rxsockfd;
 int node_id, num_of_nodes, auto_tuning = 0, feedback = 0, quiet = 0;
-int discarded = 0, forwarded = 0, sent = 0, enqueued = 0, received = 0, byte_sent = 0;
+int discarded = 0, forwarded = 0, sent = 0, enqueued = 0, received = 0;
+int byte_sent = 0, old_discarded = 0, global_old_discarded = 0;
 
 int should_discard = 0;
+unsigned int latest_tx_serial = 0;
+std::map<int, unsigned int> latest_rx_serial;
 
 
 char base_ip[64]="192.168.1.1";
@@ -510,6 +515,7 @@ void tx_loop(){
                 txe.deadline = txe.deadline - age;
                 int size = sizeof(txe) - MESSAGE_SIZE + txe.size;
 
+                txe.serial = ++latest_tx_serial;
                 if (use_ip){
                     if (sendto(txsockfd, &txe, size, 0, (struct sockaddr *) &txservaddr, sizeof(txservaddr)) != size){
                         perror("Unable to send packet of this size...");
@@ -553,7 +559,21 @@ void rx_loop(){
             continue;
         }
 
-        //      fprintf(stderr,"RECEIVING PARTs %d SIZE:%d from %d to %d\n", 0, size, txe->src, txe->dst);
+        /* ARSI */
+        if (latest_rx_serial.find(txe->src) == latest_rx_serial.end()){
+            latest_rx_serial[txe->src] = 0;
+        }
+
+        if (txe->serial <= latest_rx_serial[txe->src]){
+            /* Whatchdog in case TX node is restarted */
+            if (old_discarded ++ < 25){
+                global_old_discarded++;
+                continue;
+            }
+        }
+        old_discarded = 0;
+        latest_rx_serial[txe->src] = txe->serial;
+        /* ARSI */
 
         received ++;
 
@@ -573,6 +593,7 @@ void rx_loop(){
         std::pair<int,int> key(txe->src, txe->uid);
         RXElem & rxe = map_rx[key];
 
+        rxe.timestamp = get_timestamp();
         if (rxe.parts.size() == 0){
             rxe.parts.resize(txe->parts,0);
         }
@@ -605,6 +626,21 @@ void rx_loop(){
             queues_rx[rxe.port].push_back(rxe);
             sem_post(&sems_rx[rxe.port]);
             map_rx.erase(key);
+        }
+        /* Avoid the map to grow indefinitely with incomplete messages */
+        if (map_rx.size() > 25){
+            unsigned int older = get_timestamp();
+            std::map< std::pair <int, int>, RXElem >::iterator it_older = map_rx.end();
+            for (std::map< std::pair <int, int>, RXElem >::iterator it=map_rx.begin(); it!=map_rx.end(); ++it){
+                RXElem & rxe = it->second;
+                if (rxe.timestamp < older){
+                    older = rxe.timestamp;
+                    it_older = it;
+                }
+            }
+            if (it_older != map_rx.end()){
+                map_rx.erase(it_older);
+            }
         }
         pthread_mutex_unlock(&mtx_rx);
 
@@ -658,7 +694,7 @@ void st_loop(){
                 prev_byte = now_byte;
             }
 
-            fprintf(stderr,"Stats: Kbps:%8.2f RX:%6d TX:%6d FW:%6d DS:%6d || ENQ:%6d TXQ:%6d MAP:%3d DLY:%4d SD:%d Delay:%5d\r",
+            fprintf(stderr,"Stats: Kbps:%8.2f RX:%6d TX:%6d FW:%6d DS:%6d || ENQ:%6d TXQ:%6d MAP:%3d DLY:%4d SD:%d TXD:%5d || OD:%d\r",
                     bw,
                     received,
                     sent,
@@ -669,7 +705,8 @@ void st_loop(){
                     (int) map_rx.size(),
                     queue.size()> 0 ? get_timestamp() - queue.at(0).timestamp: 0,
                     should_discard,
-                    delay);
+                    delay,
+                    global_old_discarded);
         }
         usleep(250000);
     }
@@ -683,12 +720,25 @@ void wrapper_run_bg(){
 
 int wrapper_push(char * data, unsigned int size, unsigned char priority, unsigned char port, unsigned char src, unsigned int dst, unsigned int deadline){
 
-    std::vector<int> dests = mcast_to_vector(dst);
-
-    if (size > 10000 && (should_discard || queue.size() > queue_size)){
+    /* Topics with priority less than 50 will be discarded first */
+    if (priority < 50 && (should_discard || queue.size() > queue_size)){
         discarded ++;
+        fprintf(stderr,"Discard 1\n");
         return 0;
     }
+
+    if (priority < 75 && (should_discard || queue.size() > 2*queue_size)){
+        discarded ++;
+        fprintf(stderr,"Discard 2\n");
+        return 0;
+    }
+    if (priority < 100 && (should_discard || queue.size() > 3*queue_size)){
+        discarded ++;
+        fprintf(stderr,"Discard 3\n");
+        return 0;
+    }
+
+    std::vector<int> dests = mcast_to_vector(dst);
 
     /* Local Delivery */
     auto it = std::find(dests.begin(), dests.end(), node_id);
