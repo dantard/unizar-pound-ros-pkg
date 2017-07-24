@@ -128,7 +128,7 @@ std::map<int, unsigned int> latest_rx_serial;
 
 
 char base_ip[64]="192.168.1.1";
-char device[6]="wlan0";
+char device[16]="wlan0";
 unsigned char tx_mac[6];
 
 struct sockaddr_in txservaddr, rxservaddr, cliaddr;
