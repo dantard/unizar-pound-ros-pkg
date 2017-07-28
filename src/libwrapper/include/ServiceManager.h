@@ -43,7 +43,7 @@
 
 template<class T> class ServiceManager : public Manager {
     ros::ServiceServer service;
-    bool im_server;
+    bool im_server, qualify_tx;
     unsigned short serial;
 
     struct service_data_t{
@@ -61,7 +61,12 @@ public:
         this->deadline = deadline;
         this->topic = topic;
         this->server = server;
+        this->qualify_tx = false;
         type = SERVICE;
+    }
+
+    virtual void setQualifyTopic(bool qualify_tx, bool qualify_rx){
+        this->qualify_tx = qualify_tx || qualify_rx;
     }
 
     virtual void run() {
@@ -74,7 +79,11 @@ public:
             boost::thread(boost::bind(&ServiceManager::listen, this));
         }else{
             std::ostringstream srv_topic;
-            srv_topic << n.getNamespace() <<"/REM/R" << (int) server << "/" << topic;
+            if (qualify_tx){
+                srv_topic << n.getNamespace() <<"/R" << (int) server << "/" << topic;
+            }else{
+                srv_topic << topic;
+            }
             service = n.advertiseService(srv_topic.str(), &ServiceManager::callback, this);
         }
     }

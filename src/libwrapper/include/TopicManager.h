@@ -47,7 +47,7 @@ protected:
     ros::Subscriber sub;
     ros::Publisher pub;
     unsigned int dest;
-    bool im_source, im_dest;
+    bool im_source, im_dest, qualify_tx, qualify_rx;
     bool started;
     unsigned char src;
     std::string dest_str;
@@ -73,18 +73,31 @@ public:
         im_dest = parse_ids(dest_str, dests);
         this->dest = compute_broadcast_destination(dests);
         started = true;
+        qualify_tx = qualify_rx = false;
+    }
+
+    virtual void setQualifyTopic(bool qualify_tx, bool qualify_rx){
+        this->qualify_tx = qualify_tx;
+        this->qualify_rx = qualify_rx;
     }
 
     virtual std::string get_in_topic(){
         std::ostringstream s;
-        //s << n.getNamespace() << "/tx/" << topic;
-        s << topic;
+        if (qualify_tx){
+            s << n.getNamespace() << "/tx/" << topic;
+        }else{
+            s << topic;
+        }
         return s.str();
     }
 
     virtual std::string get_out_topic(){
         std::ostringstream s;
-        s << n.getNamespace() << "/rx/R" << (int) server << "/" << topic;
+        if (qualify_rx){
+            s << n.getNamespace() << "/rx/R" << (int) server << "/" << topic;
+        }else{
+            s << topic;
+        }
         return s.str();
     }
 

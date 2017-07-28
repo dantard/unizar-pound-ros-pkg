@@ -229,5 +229,9 @@ public:
         return wrapper_pop_done(pnt->first);
     }
 
+    virtual void setQualifyTopic(bool qualify_tx, bool qualify_rx){
+
+    }
+
 };
 #endif

@@ -68,7 +68,7 @@ bool callback(typename libwrapper::Manage::Request &req, typename libwrapper::Ma
         return wrapper_call_service(req.command, req.param1, req.param2, resp.info, resp.result);
     }else if(req.command.compare("LIST") == 0){
         resp.info.clear();
-        resp.info.append("LIST, GET_NODE_ID, ECHO, START, STOP, RECONNECT, SET_PERIOD, SET_PRIORITY, GET_PRIORITY, GET_PERIOD");
+        resp.info.append("LIST, GET_NODE_ID, ECHO, START, STOP, RECONNECT, SET_PERIOD, SET_PRIORITY, GET_PRIORITY, GET_PERIOD, TOPIC_LIST");
         resp.result = 0;
         return true;
     }else if(req.command.compare("GET_NODE_ID") == 0){
@@ -77,6 +77,23 @@ bool callback(typename libwrapper::Manage::Request &req, typename libwrapper::Ma
         return true;
     }else if(req.command.compare("ECHO") == 0){
         resp.info.append(req.param1);
+        resp.result = 0;
+        return true;
+    }else if(req.command.compare("TOPIC_LIST") == 0){
+        std::string answ;
+        resp.info.append("\nTopics:\n");
+        for (it = map.begin(); it != map.end(); it++){
+            if (map[it->first]->get_type() == Manager::TOPIC){
+                resp.info.append(" " + map[it->first]->get_topic() + "\n");
+            }
+        }
+        resp.info.append("Services:\n");
+        for (it = map.begin(); it != map.end(); it++){
+            if (map[it->first]->get_type() == Manager::SERVICE){
+                resp.info.append(" " + map[it->first]->get_topic() + "\n");
+            }
+        }
+
         resp.result = 0;
         return true;
     }
@@ -201,8 +218,10 @@ void create_shapeshifter_topics(ros::NodeHandle &n, int port, YAML::Node & topic
 
 int main(int argc, char * argv[]){
 
-    char ns[32], name[32], path[32], config_file[64];
     int ans, delay;
+    bool qlfy_tx = false, qlfy_rx = false;
+    char ns[32], name[32], path[32], config_file[64];
+
     std::ostringstream oss1;
     std::string filename = wrapper_get_config_filename();
     oss1 << getenv("HOME") << "/" <<filename;
@@ -244,8 +263,8 @@ int main(int argc, char * argv[]){
     ros::ServiceServer service = n.advertiseService("manage", callback);
     map["ss_listener"] = new ShapeShifterListener(n, port);
 
-//    std::ostringstream oss1;
-//    std::string filename = wrapper_get_config_filename();
+    //    std::ostringstream oss1;
+    //    std::string filename = wrapper_get_config_filename();
 
     filename = std::string(config_file);
     std::cerr << "Reading config file " << filename << "..." << std::endl;
@@ -257,7 +276,17 @@ int main(int argc, char * argv[]){
         if (YAML::Node topics = config["topics"]){
             create_shapeshifter_topics(n, port, topics);
         }
-
+        if (YAML::Node y_qlfy = config["qualify"]){
+            std::string qlfy = y_qlfy.as<std::string>();
+            if (qlfy.compare("both") == 0){
+                qlfy_tx = true;
+                qlfy_rx = true;
+            }else if(qlfy.compare("rx") == 0){
+                qlfy_rx = true;
+            }else if(qlfy.compare("tx") == 0){
+                qlfy_tx = true;
+            }
+        }
         std::cout << "Done." << std::endl;
     }catch(...){
         std::cout << "Bad file or file not found." << std::endl;
@@ -265,7 +294,7 @@ int main(int argc, char * argv[]){
     }
     port++;
 
-    #include "config/config.h"
+#include "config/config.h"
 
     wrapper_init(n, node_id, num_of_nodes, port);
 
@@ -297,17 +326,18 @@ int main(int argc, char * argv[]){
 
 
     for (it = map.begin(); it != map.end(); it++){
+        map[it->first]->setQualifyTopic(qlfy_tx, qlfy_rx);
         map[it->first]->run();
     }
 
 
 
-///XXXXXXXXXXXXXXXXXXXXXXXX
+    ///XXXXXXXXXXXXXXXXXXXXXXXX
     ros::AsyncSpinner spinner(4); // Use 4 threads
-//    while (ros::ok()){
-//        ros::spinOnce();
-//        usleep(10);
-//    }
+    //    while (ros::ok()){
+    //        ros::spinOnce();
+    //        usleep(10);
+    //    }
 
     spinner.start();
     ros::waitForShutdown();
