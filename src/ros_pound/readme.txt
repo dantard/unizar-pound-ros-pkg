@@ -1,4 +1,4 @@
-Configuration file to be put in ~/.rospound/config.yaml
+Pound is a ROS package, which contains a ROS node to enalbe efficient multi-master ROS solution for wireless multi-robot networks in terms of reduced delay and reduced jitter. A configuration file to specify parameters of the Pound node should be added as ~/.rospound/config.yaml
 
 Example configuration file:
 
