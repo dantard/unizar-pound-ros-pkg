@@ -9,7 +9,7 @@ endif(COMMAND cmake_policy)
 
 find_package(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs roscpp_serialization)
 find_package(Boost REQUIRED COMPONENTS thread)
-catkin_package(CATKIN_DEPENDS roscpp roscpp_serialization roscpp_tutorials)
+catkin_package(CATKIN_DEPENDS roscpp roscpp_serialization)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
@@ -20,21 +20,13 @@ add_executable (ros-pound
     ros-pound.cpp
 )
 
-target_link_libraries(ros-pound wrapper  z pthread rt pthread ${Boost_LIBRARIES}  ${catkin_LIBRARIES} )
+target_link_libraries(ros-pound wrapper z pthread rt pthread ${Boost_LIBRARIES}  ${catkin_LIBRARIES} )
 
 add_custom_command(TARGET ros-pound
         POST_BUILD
-        COMMAND echo  "Linking configuration files..."
-        COMMAND touch ${CMAKE_SOURCE_DIR}/ros_pound/config
-        COMMAND rm ${CMAKE_SOURCE_DIR}/ros_pound/config
-        COMMAND ln -s ${CMAKE_SOURCE_DIR}/libwrapper/config ${CMAKE_SOURCE_DIR}/ros_pound/
-)
-
-add_custom_command(TARGET ros-pound
-        POST_BUILD
-        COMMAND echo "Applying sticky bit to the executable..."
+        COMMAND echo "Applying SGID bit to the executable..."
         COMMAND echo ${CMAKE_BINARY_DIR}/../devel/lib/ros_pound/ros-pound
         COMMAND sudo chmod a+rwx ${CMAKE_BINARY_DIR}/../devel/lib/ros_pound/ros-pound
         COMMAND sudo chown root:root ${CMAKE_BINARY_DIR}/../devel/lib/ros_pound/ros-pound
-        COMMAND sudo chmod +s ${CMAKE_BINARY_DIR}/../devel/lib/ros_pound/ros-pound
+        COMMAND sudo chmod g+s ${CMAKE_BINARY_DIR}/../devel/lib/ros_pound/ros-pound
 )

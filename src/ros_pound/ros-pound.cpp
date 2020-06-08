@@ -123,7 +123,7 @@ int should_discard = 0;
 
 
 char base_ip[64]="192.168.1.1";
-char device[6]="wlan0";
+char device[64]="wlan0";
 unsigned char tx_mac[6];
 
 struct sockaddr_in txservaddr, rxservaddr, cliaddr;
@@ -785,6 +785,7 @@ int wrapper_set_priority(int port, int priority){
     return 0;
 }
 bool wrapper_call_service(std::string command, std::string param1, int param2, std::string & info, int &result){
+    return false;
 }
 
 //int main(int argc, char * argv[]){

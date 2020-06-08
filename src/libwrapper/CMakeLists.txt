@@ -7,7 +7,7 @@ if(COMMAND cmake_policy)
         cmake_policy(SET CMP0015 NEW)
 endif(COMMAND cmake_policy)
 
-find_package(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs topic_tools)
+find_package(catkin REQUIRED COMPONENTS message_generation roscpp roscpp_serialization std_msgs topic_tools)
 find_package(Boost REQUIRED COMPONENTS thread)
 
 add_message_files(FILES
@@ -20,7 +20,7 @@ add_service_files(FILES
 generate_messages()
 
 
-catkin_package(CATKIN_DEPENDS roscpp roscpp_serialization)
+catkin_package(CATKIN_DEPENDS roscpp roscpp_serialization std_msgs topic_tools)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 #set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin)
